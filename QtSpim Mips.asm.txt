@@ -1,0 +1,695 @@
+
+
+		li $t1, 0			# Subcells loop counter in $t1
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		li $t6, 0
+		li $t7, 0
+		la $s0, indata			# $s0 holds indata
+		la $s2, GIFT_S			# $s2 holds GIFT_S
+		j SubCells
+	
+        #indata[i] = GIFT_S[indata[i]];
+		lbu $t2, ($s0)			# Get indata[i]
+		srl $t3, $t2, 4			# indata[i] is in $t2.
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		addu $t6, $s2, $t3
+		addu $t7, $s2, $t4
+		lbu $t3, ($t6)
+		lbu $t4, ($t7)
+		sll $t3, $t3, 4
+		or $t5, $t3, $t4
+		sb $t5, ($s0)
+		addi $t1, $t1, 1		# Increment counter
+		beq $t1, 8, SubCellReset.       # Check subcells counter
+		addi $s0, $s0, 1		# Shift $s0 by one byte
+		j SubCells
+	
+	
+
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		la $s0, indata
+		la $s5, P_BITS
+		lbu $t2, 0($s0)			# Load first byte of indata ($s0) into $t2
+		j InputToBits
+		
+		
+	
+		
+		andi $t3, $t2, 0x01
+		srlv $t2, $t2, 1
+		sb $t3, ($s5)
+
+		addi $t1, $t1, 1		# Increment counters
+		addi $s5, $s5, 1
+		beq $t1, 8, ShiftByte
+		j InputToBits
+	
+	
+		li $t2, 0
+		addi $t5, $t5, 1
+		beq $t5, 8, PermuteBitsClear
+		addi $s0, $s0, 0x01
+		lbu $t2, ($s0)			# Load next byte of indata ($s0) into $t2
+		li  $t1, 0
+		j InputToBits
+		
+	
+		li $t1, 0
+		li $t2, 0
+		li $t4, 0
+		li $t5, 0
+		li $s5, 0
+		la $s5, P_BITS
+		la $s3, GIFT_P
+		j PermuteBits
+		
+	
+		la $s4, PERM_BITS
+		beq $t1, 64, PreConcatBytes
+		lb $t3, ($s5)
+		lb $t2, ($s3)
+		add $s4, $t2, $s4
+		sb $t3, ($s4)
+		addi $s5, $s5, 1
+		addi $s3, $s3, 1
+		addi $t1, $t1, 1
+		j PermuteBits
+	
+	
+		li $t1, 7
+		li $t3, 0
+		li $t4, 0
+		li $t2, 0
+		la $s4, PERM_BITS
+		la $s6, FLIP
+		j ConcatBytes
+	
+	
+		lbu $t2, ($s4)
+		sllv $t3, $t2, $t1
+		addu $t4, $t3, $t4
+		beq $t1, 0, Concat
+		addi $s4, $s4, 1
+		sub $t1, $t1, 1
+		j ConcatBytes
+		
+	
+		sb $t4, ($s6)
+		addi $s6, $s6, 1
+		addi $t5, $t5, 1
+		beq $t5, 8, PreMoveBytes
+		li $t1, 7
+		li $t3, 0
+		li $t2, 0
+		li $t4, 0
+		addi $s4, $s4, 1
+		j ConcatBytes
+		
+	
+		la $s0, indata
+		la $s6, FLIP
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		li $t6, 0
+		j MoveBytes
+	
+	
+		lbu $t2, ($s6)
+		sb $t2, 1($s0)
+		lbu $t2, 1($s6)
+		sb $t2, 0($s0)
+		lbu $t2, 2($s6)
+		sb $t2, 7($s0)
+		lbu $t2, 3($s6)
+		sb $t2, 6($s0)
+		lbu $t2, 4($s6)
+		sb $t2, 5($s0)
+		lbu $t2, 5($s6)
+		sb $t2, 4($s0)
+		lbu $t2, 6($s6)
+		sb $t2, 3($s0)
+		lbu $t2, 7($s6)
+		sb $t2, 2($s0)
+		j PreRKInputToBits	
+	
+		
+	
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		la $s0, indata
+		la $s1, P_BITS
+		lbu $t2, 0($s0)
+		j RKInputToBits
+	
+		andi $t3, $t2, 0x01
+		srlv $t2, $t2, 1
+		sb $t3, ($s1)
+		addi $t1, $t1, 1			# Increment counters
+		addi $s1, $s1, 1
+		beq $t1, 8, RKShiftByte
+		j RKInputToBits
+	
+	
+		li $t2, 0
+		addi $t5, $t5, 1
+		beq $t5, 8, PreK2KBits
+		addi $s0, $s0, 0x01
+		lbu $t2, ($s0)				# Load next byte of indata ($s0) into $t2
+		li  $t1, 0
+		j RKInputToBits
+
+	
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		la $s1, inkey
+		la $s3, K_BITS
+		lbu $t2, 0($s1)
+		j K2KBits
+		
+
+		andi $t3, $t2, 0x01
+		srlv $t2, $t2, 1
+		sb $t3, ($s3)				## FIX ENDIANNESS
+		addi $t1, $t1, 1			# Increment counters
+		addi $s3, $s3, 1
+		beq $t1, 8, K2KShiftByte
+		j K2KBits
+	
+	K
+		li $t2, 0
+		addi $t5, $t5, 1
+		beq $t5, 16, PreAddRoundKey
+		addiu $s1, $s1, 0x01
+		lbu $t2, ($s1)
+		li  $t1, 0
+		j K2KBits
+	
+	
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		j AddRoundKey
+	
+		la $s4, K_BITS
+		la $s1, P_BITS
+		addu $s4, $s4, $t2
+		lbu $t3, ($s4)
+		sll $t6, $t1, 2
+		addu $s1, $s1, $t6
+		lbu $t5, ($s1)
+		xor $t7, $t5, $t3
+		sb $t7, ($s1)
+		addiu $s4, $s4, 16
+		lbu $t3, ($s4)
+		addi $s1, $s1, 1
+		lbu $t4, ($s1)
+		xor $t7, $t4, $t3
+		sb $t7, ($s1)
+		beq $t1, 15, PreAddConstant 
+		addi $t1, $t1, 1			# I counter
+		addi $t2, $t2, 1			# KBC
+		j AddRoundKey
+
+		
+	
+		la $s4, GIFT_RC
+		la $s1, P_BITS
+		li $t1, 0				#addiu $s1, $s1, 3
+		li $t2, 0
+		li $t3, 0
+		li $t5, 0
+		li $t6, 0
+		li $t7, 0
+		j AddConstant
+	
+	
+		lbu $t3, 3($s1)				# P_BITS
+		addu $s4, $s4, $t0			# GIFT_RC
+		lbu $t4, ($s4)
+		and $t5, $t4, 0x01
+		xor $t7, $t5, $t3
+		sb $t7, 3($s1)
+		lbu $t3, 7($s1)
+		srl $t5, $t4, 1
+		andi $t5, $t5, 0x01
+		xor $t7, $t5, $t3
+		sb $t7, 7($s1)
+		lbu $t3, 11($s1)
+		srl $t5, $t4, 2
+		andi $t5, $t5, 0x01
+		
+		xor $t7, $t5, $t3
+		sb $t7, 11($s1)		
+		lbu $t3, 15($s1)
+		srl $t5, $t4, 3
+		andi $t5, $t5, 0x01
+		
+		xor $t7, $t5, $t3
+		sb $t7, 15($s1)
+		
+		lbu $t3, 19($s1)
+		srl $t5, $t4, 4
+		andi $t5, $t5, 0x01
+		
+		xor $t7, $t5, $t3
+		sb $t7, 19($s1)
+		
+		lbu $t3, 23($s1)			#addiu $s1, $s1, 4
+		srl $t5, $t4, 5
+		andi $t5, $t5, 0x01
+		
+		xor $t7, $t5, $t3
+		sb $t7, 23($s1)
+		
+		lbu $t3, 63($s1)			#addi $s1, $s1, 40
+		xori $t7, $t3, 0x01
+		sb $t7, 63($s1)
+		j PRKBitsToInput
+	
+	
+	
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		li $t6, 0
+		li $t7, 0
+		la $s0, indata
+		la $s1, P_BITS
+		j RKBitsToInput
+	
+		lbu $t2, ($s1)
+		sllv $t3, $t2, $t1
+		addu $t4, $t3, $t4
+		beq $t1, 7, RKConcatBits
+		addi $s1, $s1, 1
+		addi $t1, $t1, 1
+	
+		j RKBitsToInput
+		
+	
+		sb $t4, ($s0)
+		addi $s0, $s0, 1
+		addi $t5, $t5, 1
+		beq $t5, 8, PreUpdateKey
+		li $t1, 0
+		li $t3, 0
+		li $t2, 0
+		li $t4, 0
+		addi $s1, $s1, 1
+		j RKBitsToInput
+
+	
+	
+		li $t1, 0
+		li $t2, 16
+		li $t3, 0
+		la $s6, TEMP_KEY
+		
+		j MakeTempKey				#la $s2, inkey
+	
+
+		la $s2, inkey
+		addi $t3, $t1, 4
+		div $t3, $t2
+		mfhi $t3
+		add $s2, $s2, $t3
+		lbu $t4, ($s2)
+		sb $t4, ($s6)
+		beq $t1, 15, PRefine
+		addi $t1, $t1, 1
+		addi $s6, $s6, 1
+
+		j MakeTempKey
+ 
+ 
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		la $s6, TEMP_KEY
+		la $s7, TEMP
+		j Refine
+		
+		lbu $t2, ($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, ($s7)
+		sb $t3, 1($s7)
+		
+		lbu $t2, 1($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 2($s7)
+		sb $t3, 3($s7)
+		
+		lbu $t2, 2($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 4($s7)
+		sb $t3, 5($s7)
+		
+		lbu $t2, 3($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 6($s7)
+		sb $t3, 7($s7)
+		
+		lbu $t2, 4($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 8($s7)
+		sb $t3, 9($s7)
+		
+		lbu $t2, 5($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 10($s7)
+		sb $t3, 11($s7)
+		
+		lbu $t2, 6($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 12($s7)
+		sb $t3, 13($s7)
+		
+		lbu $t2, 7($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 14($s7)
+		sb $t3, 15($s7)
+		
+		lbu $t2, 8($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 16($s7)
+		sb $t3, 17($s7)
+		
+		lbu $t2, 9($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 18($s7)
+		sb $t3, 19($s7)
+		
+		lbu $t2, 10($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 20($s7)
+		sb $t3, 21($s7)
+		
+		lbu $t2, 11($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 22($s7)
+		sb $t3, 23($s7)
+		
+		lbu $t2, 12($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 24($s7)
+		sb $t3, 25($s7)
+		
+		lbu $t2, 13($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 26($s7)
+		sb $t3, 27($s7)
+		
+		lbu $t2, 14($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 28($s7)
+		sb $t3, 29($s7)
+		
+		lbu $t2, 15($s6)
+		srl $t3, $t2, 4
+		andi $t3, $t3, 0xF
+		andi $t4, $t2, 0xF
+		sb $t4, 30($s7)
+		sb $t3, 31($s7)
+		
+		
+		j PUpdateKey
+
+ 
+
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		la $s7, TEMP
+		la $s6, TEMP_KEY
+		j UpdateKey
+    
+	
+		lbu $t2, ($s7)
+		sb $t2, ($s6)
+		beq $t1, 23, ShiftKey
+		addi $s7, $s7, 1
+		addi $s6, $s6, 1
+		addi $t1, $t1, 1
+		j UpdateKey
+		
+
+	
+		la $s7, TEMP
+		la $s6, TEMP_KEY
+
+		lbu $t3, 27($s7)
+		sb $t3, 24($s6)
+		
+		lbu $t3, 24($s7)
+		sb $t3, 25($s6)
+		
+		lbu $t3, 25($s7)
+		sb $t3, 26($s6)
+		
+		lbu $t3, 26($s7)
+		sb $t3, 27($s6)
+		
+		lbu $t3, 28($s7)
+		andi $t3, $t3, 0xC
+		srl $t3, $t3, 2
+		lbu $t4, 29($s7)
+		andi $t4, $t4, 0x3
+		sll $t4, $t4, 2
+		or $t5, $t4, $t3
+		sb $t5, 28($s6)
+		
+		lbu $t3, 29($s7)
+		andi $t3, $t3, 0xC
+		srl $t3, $t3, 2
+		lbu $t4, 30($s7)
+		andi $t4, $t4, 0x3
+		sll $t4, $t4, 2
+		or $t5, $t4, $t3
+		sb $t5, 29($s6)
+		
+		lbu $t3, 30($s7)
+		andi $t3, $t3, 0xC
+		srl $t3, $t3, 2
+		lbu $t4, 31($s7)
+		andi $t4, $t4, 0x3
+		sll $t4, $t4, 2
+		or $t5, $t4, $t3
+		sb $t5, 30($s6)
+		
+		lbu $t3, 31($s7)
+		andi $t3, $t3, 0xC
+		srl $t3, $t3, 2
+		lbu $t4, 28($s7)
+		andi $t4, $t4, 0x3
+		sll $t4, $t4, 2
+		or $t5, $t4, $t3
+		sb $t5, 31($s6)
+
+		j PreConcatKey
+		
+
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		li $t6, 0
+		la $s2, inkey
+		la $s6, TEMP_KEY
+		j ConcatKey
+	
+
+		lbu $t2, ($s6)
+		lbu $t3, 1($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, ($s2)
+		
+		lbu $t2, 2($s6)
+		lbu $t3, 3($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 1($s2)
+		
+		lbu $t2, 4($s6)
+		lbu $t3, 5($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 2($s2)
+		
+		lbu $t2, 6($s6)
+		lbu $t3, 7($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 3($s2)
+		
+		lbu $t2, 8($s6)
+		lbu $t3, 9($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 4($s2)
+		
+		lbu $t2, 10($s6)
+		lbu $t3, 11($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 5($s2)
+
+		lbu $t2, 12($s6)
+		lbu $t3, 13($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 6($s2)
+		
+		lbu $t2, 14($s6)
+		lbu $t3, 15($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 7($s2)
+		
+		lbu $t2, 16($s6)
+		lbu $t3, 17($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 8($s2)
+
+		lbu $t2, 18($s6)
+		lbu $t3, 19($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 9($s2)
+		
+		lbu $t2, 20($s6)
+		lbu $t3, 21($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 10($s2)
+		
+		lbu $t2, 22($s6)
+		lbu $t3, 23($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 11($s2)
+		
+		lbu $t2, 24($s6)
+		lbu $t3, 25($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 12($s2)
+		
+		lbu $t2, 26($s6)
+		lbu $t3, 27($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 13($s2)
+		
+		lbu $t2, 28($s6)
+		lbu $t3, 29($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 14($s2)
+		
+		lbu $t2, 30($s6)
+		lbu $t3, 31($s6)
+		sll $t3, $t3, 4
+		addu $t3, $t2, $t3
+		sb $t3, 15($s2)
+		
+		j NEXTROUND
+
+
+		
+
+		addi $t0, $t0, 1
+		beq $t0, 28
+		j Start
+		
+		
+	
+		li $t0, 0
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		li $t4, 0
+		li $t5, 0
+		li $t6, 0
+		li $t7, 0
+		la $s0, indata
+		j 
+		
+	
+		lbu $t0, ($s0)
+		lbu $t1, 1($s0)
+		lbu $t2, 2($s0)
+		lbu $t3, 3($s0)
+		lbu $t4, 4($s0)
+		lbu $t5, 5($s0)
+		lbu $t6, 6($s0)
+		lbu $t7, 7($s0)
+		addi $s0, $s0, 2
+		sb $t0, ($s0)
+		sb $t1, 1($s0)
+		sb $t2, 2($s0)
+		sb $t3, 3($s0)
+		sb $t4, 4($s0)
+		sb $t5, 5($s0)
+		sb $t6, 6($s0)
+		sb $t7, 7($s0)
+		j EXIT
+		
+	exit
